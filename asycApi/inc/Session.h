@@ -52,13 +52,15 @@ public:
 
     void ReadFromSocket();
     void ReadCallback(const boost::system::error_code&ec,std::size_t bytes_tranferred);
+
+    void ReadAllFromSocket();
+    void ReadAllCallback(const boost::system::error_code&ec,std::size_t bytes_tranferred);
 private:
     std::queue<std::shared_ptr<MsgNode>> _send_queue;
     std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
     std::shared_ptr<MsgNode> _send_node;
     bool _send_pending;
 
-    std::queue<std::shared_ptr<MsgNode>> _recv_queue;
     std::shared_ptr<MsgNode> _recv_node;
     bool _recv_pending;
 };

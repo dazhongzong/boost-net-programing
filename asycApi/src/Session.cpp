@@ -121,3 +121,20 @@ void Session::ReadCallback(const boost::system::error_code&ec,std::size_t bytes_
         _recv_node = nullptr;
     }
 }
+
+void Session::ReadAllFromSocket(){
+    if(_recv_pending){
+        return ;
+    }
+
+    _recv_node = std::make_shared<MsgNode>(RECVSIZE);
+    _socket->async_receive(boost::asio::buffer(_recv_node->_msg,_recv_node->_total_len),
+    std::bind(&Session::ReadAllCallback,this,std::placeholders::_1,std::placeholders::_2));
+    _recv_pending = true;
+}
+void Session::ReadAllCallback(const boost::system::error_code&ec,std::size_t bytes_tranferred){
+    _recv_node->_cur_len += bytes_tranferred;
+    _recv_node = nullptr;
+    _recv_pending = false;
+
+}

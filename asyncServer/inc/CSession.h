@@ -42,6 +42,7 @@ public:
 private:
     void HandleRead(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
     void HandleWrite(const boost::system::error_code&ec,std::shared_ptr<CSession> _self_CSession);
+    void PrintRecvData(char* data,int length);
 };
 
 class MsgNode

@@ -1,5 +1,6 @@
 #include "../inc/CSession.h"
 #include "../inc/CServer.h"
+#include <sstream>
 void CSession::Send(char *msg, int length)
 {
     bool pending = false;
@@ -45,6 +46,9 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
     */
     if (!ec)
     {
+        PrintRecvData(_data,bytes_transferred);
+        std::chrono::milliseconds dura(2000);
+        std::this_thread::sleep_for(dura);
         // 已经移动的字节数
         int copy_len = 0;
         while (bytes_transferred)
@@ -180,4 +184,18 @@ void CSession::HandleWrite(const boost::system::error_code &ec, std::shared_ptr<
 std::string &CSession::GetUuid()
 {
     return _uuid;
+}
+
+void CSession::PrintRecvData(char* data,int length)
+{
+    std::stringstream ss;
+    std::string result = "0x";
+    for(int i = 0;i<length;i++)
+    {
+        std::string hexstr;
+        ss<<std::hex<<std::setw(2)<<std::setfill('0')<<int(data[i])<<std::endl;
+        ss>>hexstr;
+        result +=hexstr;
+        std::cout<<"receive raw data is : "<<data<<std::endl;
+    }
 }

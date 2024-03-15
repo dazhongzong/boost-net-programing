@@ -7,11 +7,55 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
+#include <iomanip>
 using boost::asio::ip::tcp;
-#define MAX_LENGTH (1024*2)
+#define MAX_LENGTH 1024*2
 #define HEAD_LENGTH 2
+#define MAX_SENDQUE 1000
 class CServer;
-class MsgNode;
+
+class MsgNode
+{
+    friend class CSession;
+public:
+    //发送
+    MsgNode(const char* msg,short total_len):_total_len(total_len+HEAD_LENGTH),_cur_len(0),_msg(nullptr)
+    {
+        _msg = new char[_total_len+1]();
+        //本地字节序转为网络字节序
+        int max_len_host = boost::asio::detail::socket_ops::network_to_host_short(total_len);
+        memcpy(_msg,&max_len_host,HEAD_LENGTH);
+        memcpy(_msg+HEAD_LENGTH,msg,total_len);
+        _msg[_total_len] = 0;
+    }
+    //接收
+    MsgNode(short total_len):_total_len(total_len),_cur_len(0),_msg(nullptr)
+    {
+        _msg = new char[_total_len + 1]();
+    }
+    
+    ~MsgNode()
+    {
+        if(!_msg)
+        {
+            delete[] _msg;
+            _msg = nullptr;
+        }
+    }
+    void Clear()
+    {
+        memset(_msg,0,_total_len);
+        _cur_len = 0;
+    }
+public:
+    //总长度
+    int _total_len;
+    //当前长度
+    int _cur_len;
+    //消息首地址
+    char* _msg;    
+};
+
 class CSession: public std::enable_shared_from_this<CSession>
 {
 private:
@@ -43,44 +87,4 @@ private:
     void HandleRead(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
     void HandleWrite(const boost::system::error_code&ec,std::shared_ptr<CSession> _self_CSession);
     void PrintRecvData(char* data,int length);
-};
-
-class MsgNode
-{
-    friend class CSession;
-public:
-    //发送
-    MsgNode(const char* msg,short total_len):_total_len(total_len+HEAD_LENGTH),_cur_len(0),_msg(nullptr)
-    {
-        _msg = new char[_total_len+1]();
-        memcpy(_msg,&total_len,HEAD_LENGTH);
-        memcpy(_msg+HEAD_LENGTH,msg,total_len);
-        _msg[_total_len] = 0;
-    }
-    //接收
-    MsgNode(short total_len):_total_len(total_len),_cur_len(0),_msg(nullptr)
-    {
-        _msg = new char[_total_len + 1]();
-    }
-    
-    ~MsgNode()
-    {
-        if(!_msg)
-        {
-            delete[] _msg;
-            _msg = nullptr;
-        }
-    }
-    void Clear()
-    {
-        memset(_msg,0,_total_len);
-        _cur_len = 0;
-    }
-public:
-    //总长度
-    int _total_len;
-    //当前长度
-    int _cur_len;
-    //消息首地址
-    char* _msg;    
 };

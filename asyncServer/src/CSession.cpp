@@ -5,6 +5,12 @@ void CSession::Send(char *msg, int length)
 {
     bool pending = false;
     std::lock_guard<std::mutex> lock(_send_lock);
+    int send_que_size = _send_que.size();
+    if(send_que_size > MAX_SENDQUE)
+    {
+        std::cout<<"session:"<<_uuid<<"send que fulled size is"<<MAX_SENDQUE <<std::endl;
+        return;
+    }
     if (!_send_que.empty())
     {
         pending = true;
@@ -46,9 +52,10 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
     */
     if (!ec)
     {
-        PrintRecvData(_data,bytes_transferred);
-        std::chrono::milliseconds dura(2000);
-        std::this_thread::sleep_for(dura);
+        // 验证是否存在粘包
+        // PrintRecvData(_data,bytes_transferred);
+        // std::chrono::milliseconds dura(2000);
+        // std::this_thread::sleep_for(dura);
         // 已经移动的字节数
         int copy_len = 0;
         while (bytes_transferred)
@@ -75,6 +82,8 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                 //解析头部数据
                 short data_len = 0;
                 memcpy(&data_len,_recv_head_node->_msg,HEAD_LENGTH);
+                //网络字节序转换成本地字节序
+                data_len = boost::asio::detail::socket_ops::network_to_host_short(data_len);
                 std::cout<<"data_len is "<<data_len <<std::endl;
                 //判断消息体长度
                 if(data_len > MAX_LENGTH)
@@ -83,6 +92,7 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                     _server->ClearSession(_uuid);
                     return ;
                 }
+                //右值 调用移动构造赋值语句  将会释放掉原本的空间
                 _recv_msg_node = std::make_shared<MsgNode>(data_len);
 
                 if(bytes_transferred<data_len)
@@ -160,6 +170,7 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
         _server->ClearSession(_uuid);
     }
 }
+
 void CSession::HandleWrite(const boost::system::error_code &ec, std::shared_ptr<CSession> _self_CSession)
 {
     if (!ec)

@@ -71,8 +71,10 @@ private:
     bool _b_head_parse;
     //收到的头部结构
     std::shared_ptr<MsgNode> _recv_head_node;
+
+    bool _b_close ;
 public:
-    CSession(boost::asio::io_context& ioc,CServer* server):_socket(ioc),_data{0},_server(server),_b_head_parse(false),_recv_msg_node(new MsgNode(MAX_LENGTH)),_recv_head_node(new MsgNode(HEAD_LENGTH)){
+    CSession(boost::asio::io_context& ioc,CServer* server):_socket(ioc),_data{0},_server(server),_b_head_parse(false),_recv_msg_node(new MsgNode(MAX_LENGTH)),_recv_head_node(new MsgNode(HEAD_LENGTH)),_b_close(false){
         //雪花算法  
         boost::uuids::uuid a_uuid = boost::uuids::random_generator()();
         _uuid = boost::uuids::to_string(a_uuid);
@@ -83,8 +85,13 @@ public:
     void Send(char* msg,int max_length);
     void Start();
     std::string& GetUuid();
+    void Close();
 private:
     void HandleRead(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
     void HandleWrite(const boost::system::error_code&ec,std::shared_ptr<CSession> _self_CSession);
     void PrintRecvData(char* data,int length);
+
+
+    void HandleReadHead(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
+    void HandleReadMsg(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
 };

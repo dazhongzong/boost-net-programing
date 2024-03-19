@@ -8,12 +8,10 @@
 #include <mutex>
 #include <queue>
 #include <iomanip>
-#include <../../tlv/inc/Const.h>
-#include <../../tlv/inc/MsgNode.h>
+#include "Const.h"
+#include "MsgNode.h"
 using boost::asio::ip::tcp;
-#define MAX_LENGTH 1024*2
-#define HEAD_LENGTH 2
-#define MAX_SENDQUE 1000
+
 class CServer;
 
 // class MsgNode
@@ -76,7 +74,7 @@ private:
 
     bool _b_close ;
 public:
-    CSession(boost::asio::io_context& ioc,CServer* server):_socket(ioc),_data{0},_server(server),_b_head_parse(false),_b_close(false){
+    CSession(boost::asio::io_context& ioc,CServer* server):_socket(ioc),_data{0},_server(server),_b_head_parse(false),_b_close(false),_recv_head_node(new MsgNode(HEAD_TOTAL_LEN)){
         //雪花算法  
         boost::uuids::uuid a_uuid = boost::uuids::random_generator()();
         _uuid = boost::uuids::to_string(a_uuid);
@@ -84,7 +82,8 @@ public:
     tcp::socket& Socket(){
         return _socket;
     }
-    void Send(char* msg,int max_length);
+    void Send(char* msg,int max_length,short msg_id);
+    void Send(std::string msg,short msg_id);
     void Start();
     std::string& GetUuid();
     void Close();

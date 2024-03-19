@@ -1,7 +1,10 @@
 #include "../inc/CSession.h"
 #include "../inc/CServer.h"
 #include <sstream>
-void CSession::Send(char *msg, int length)
+#include <json/json.h>
+#include <json/value.h>
+#include <json/reader.h>
+void CSession::Send(char *msg, int length,short msg_id)
 {
     bool pending = false;
     std::lock_guard<std::mutex> lock(_send_lock);
@@ -15,15 +18,20 @@ void CSession::Send(char *msg, int length)
     {
         pending = true;
     }
-    _send_que.push(std::make_shared<SendNode>(msg, length));
+    _send_que.push(std::make_shared<SendNode>(msg, length,msg_id));
     if (pending)
     {
         return;
     }
-    boost::asio::async_write(_socket, boost::asio::buffer(msg, length),
+    auto & msgnode = _send_que.front();
+    boost::asio::async_write(_socket, boost::asio::buffer(msgnode->_data, msgnode->_total_len),
                              std::bind(&CSession::HandleWrite, this, std::placeholders::_1, shared_from_this()));
 }
 
+void CSession::Send(std::string msg,short msg_id)
+{
+    Send(&msg[0],msg.length(),msg_id);
+}
 
 void CSession::Close()
 {
@@ -33,12 +41,12 @@ void CSession::Close()
 
 void CSession::Start()
 {
-    _recv_head_node->Clear();
-    boost::asio::async_read(_socket,boost::asio::buffer(_recv_head_node->_data,HEAD_LENGTH),
-    std::bind(&CSession::HandleReadHead,this,std::placeholders::_1,std::placeholders::_2,shared_from_this()));
-    // memset(_data, 0, MAX_LENGTH);
-    // _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
-    //                         std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_from_this()));
+    // _recv_head_node->Clear();
+    // boost::asio::async_read(_socket,boost::asio::buffer(_recv_head_node->_data,HEAD_TOTAL_LEN),
+    // std::bind(&CSession::HandleReadHead,this,std::placeholders::_1,std::placeholders::_2,shared_from_this()));
+    memset(_data, 0, MAX_LENGTH);
+    _socket.async_read_some(boost::asio::buffer(_data, MAX_LENGTH),
+                            std::bind(&CSession::HandleRead, this, std::placeholders::_1, std::placeholders::_2, shared_from_this()));
 }
 
 void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_transferred, std::shared_ptr<CSession> _self_CSession)
@@ -94,6 +102,15 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                 //解析头部数据
                 short msg_id = 0;
                 memcpy(&msg_id,_recv_head_node->_data,HEAD_ID_LEN);
+                msg_id = boost::asio::detail::socket_ops::network_to_host_short(msg_id);
+                std::cout<<"msg id is "<< msg_id<<std::endl;
+                //id
+                if(msg_id >  MAX_LENGTH)
+                {
+                    std::cout<<"invalid msg_id is "<<msg_id<<std::endl;
+                    _server->ClearSession(_uuid);
+                    return ;
+                }
 
                 short data_len = 0;
                 memcpy(&data_len,_recv_head_node->_data + HEAD_ID_LEN,HEAD_DATA_LEN);
@@ -108,8 +125,7 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                     return ;
                 }
                 //右值 调用移动构造赋值语句  将会释放掉原本的空间
-                _recv_msg_node = std::make_shared<RecvNode>(data_len);
-
+                _recv_msg_node = std::make_shared<RecvNode>(data_len,msg_id);
                 if(bytes_transferred<data_len)
                 {
                     memcpy(_recv_msg_node->_data + _recv_msg_node->_cur_len,_data + copy_len,bytes_transferred);
@@ -129,7 +145,10 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                 _recv_msg_node->_data[_recv_msg_node->_total_len] = 0;
                 std::cout<<"receive data is "<<_recv_msg_node->_data <<std::endl;
                 //调用Send发送测试
-                Send(_recv_msg_node->_data,_recv_msg_node->_total_len);
+                Json::Value root;
+                Json::Reader reader;
+                reader.parse(_recv_msg_node->_data,root);
+                Send(root.toStyledString(),root["id"].asInt());
                 //继续轮询剩余未处理数据
                 _b_head_parse = false;
                 _recv_head_node->Clear();
@@ -160,7 +179,11 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
             bytes_transferred -= remain_msg;
             _recv_msg_node->_data[_recv_msg_node->_total_len] = 0;
             std::cout<<"receive body data is : "<<_recv_msg_node->_data<<std::endl;
-            Send(_recv_msg_node->_data,_recv_msg_node->_total_len);
+
+            Json::Value root;
+            Json::Reader reader;
+            reader.parse(_recv_msg_node->_data,root);
+            Send(root.toStyledString(),root["id"].asInt());
             //开启处理下一个 消息头部和消息体
             _b_head_parse = false;
             _recv_head_node->Clear();
@@ -231,7 +254,7 @@ void CSession::HandleReadHead(const boost::system::error_code& ec,size_t bytes_t
 {
     if(!ec)
     {
-        if(bytes_transferred < HEAD_LENGTH)
+        if(bytes_transferred < HEAD_TOTAL_LEN)
         {
             std::cout<<"read head length error";
             Close();
@@ -240,8 +263,12 @@ void CSession::HandleReadHead(const boost::system::error_code& ec,size_t bytes_t
         }
 
         //头部接收完全，开始解析头部
+        short msg_id = 0;
+        memcpy(&msg_id,_recv_head_node->_data,HEAD_ID_LEN);
+        msg_id = boost::asio::detail::socket_ops::network_to_host_short(msg_id);
+
         short data_len = 0;
-        memcpy(&data_len,_recv_head_node->_data,HEAD_LENGTH);
+        memcpy(&data_len,_recv_head_node->_data+HEAD_ID_LEN,HEAD_DATA_LEN);
         data_len = boost::asio::detail::socket_ops::network_to_host_short(data_len);
         std::cout<<"data len is "<<data_len <<std::endl;
     
@@ -251,8 +278,8 @@ void CSession::HandleReadHead(const boost::system::error_code& ec,size_t bytes_t
             _server->ClearSession(_uuid);
             return;
         }
-        
-        _recv_msg_node = std::make_shared<RecvNode>(data_len);
+
+        _recv_msg_node = std::make_shared<RecvNode>(data_len,msg_id);
         boost::asio::async_read(_socket,boost::asio::buffer(_recv_msg_node->_data,data_len),
             std::bind(&CSession::HandleReadMsg,this,std::placeholders::_1,std::placeholders::_2,shared_from_this())
         );
@@ -274,9 +301,10 @@ void CSession::HandleReadMsg(const boost::system::error_code& ec,size_t bytes_tr
     
 
         std::cout<<"receive data is "<<_recv_msg_node->_data<<std::endl;
+        Send(_recv_msg_node->_data,_recv_msg_node->_total_len,_recv_msg_node->_msg_id);
         _recv_head_node->Clear();
 
-        boost::asio::async_read(_socket,boost::asio::buffer(_recv_head_node->_data,HEAD_LENGTH),
+        boost::asio::async_read(_socket,boost::asio::buffer(_recv_head_node->_data,HEAD_TOTAL_LEN),
         std::bind(&CSession::HandleReadHead,this,std::placeholders::_1,std::placeholders::_2,shared_from_this()));
     }
     else 

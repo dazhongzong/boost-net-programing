@@ -1,8 +1,11 @@
 #include <boost/asio.hpp>
 #include <iostream>
 #include<thread>
-#define MAX_LENGTH (1024 * 2)
-#define HEAD_LENGTH 2
+#include <json/json.h>
+#include <json/value.h>
+#include <json/reader.h>
+#include "Const.h"
+
 
 using boost::asio::ip::address;
 using boost::asio::ip::tcp;
@@ -24,6 +27,48 @@ int main()
             cout << "connect failed, code is " << error.value() << " error msg is " << error.message();
             return 0;
         }
+
+        Json::Value root;
+        root["id"] = 1001;
+        root["data"] = "hello world";
+        std::string request = root.toStyledString();
+        size_t req_len = request.length();
+        char send_data[MAX_LENGTH] = {0};
+        
+        int msgid = 1001;
+        int msgid_net = boost::asio::detail::socket_ops::host_to_network_short(msgid);
+        memcpy(send_data,&msgid_net,2);
+
+        size_t req_len_net = boost::asio::detail::socket_ops::host_to_network_short(req_len);
+        memcpy(send_data+2,&req_len_net,2);
+
+        memcpy(send_data+4,request.c_str(),req_len);       
+        boost::asio::write(sock,boost::asio::buffer(send_data,req_len+4));
+        std::cout<<"begin to receive ..."<<std::endl;
+
+        char reply_head[HEAD_TOTAL_LEN] = {0};
+        size_t reply_head_length =  boost::asio::read(sock,boost::asio::buffer(reply_head,HEAD_TOTAL_LEN));
+        short reply_msgid = 0;
+        memcpy(&reply_msgid,reply_head,HEAD_ID_LEN);
+        short reply_msgid_host = boost::asio::detail::socket_ops::network_to_host_short(reply_msgid);
+        std::cout<<"msg id is "<<reply_msgid_host<<std::endl;
+
+        short reply_msglen = 0;
+        memcpy(&reply_msglen,reply_head + HEAD_ID_LEN, HEAD_DATA_LEN);
+        short reply_msglen_host = boost::asio::detail::socket_ops::network_to_host_short(reply_msglen);
+        std::cout<<"msg len is "<<reply_msglen_host <<std::endl;
+
+        char reply_msg[MAX_LENGTH] = {0};
+        size_t reply_msg_len =  boost::asio::read(sock,boost::asio::buffer(reply_msg,reply_msglen_host));
+        
+        std::cout<<"reply_msg :"<<reply_msg<<std::endl;
+
+        // Json::Value root2;
+        // Json::Reader reader;
+        // reader.parse(std::string(reply_msg,reply_msg_len),root2);
+        // std::cout<<"root2 id is "<<root2["id"]<<"  data is "<<root2["data"]<<std::endl;
+        #pragma region 
+        /*  
         //创建发送消息线程
         std::thread send_thread([&sock]
         {
@@ -62,7 +107,7 @@ int main()
 
         send_thread.join();
         recv_thread.join();
-
+*/
         
         /*  echo 客户端模式
         // 创建上下文服务
@@ -97,10 +142,13 @@ int main()
         std::cout << "Reply len is " << msglen;
         std::cout << "\n";
         */
+       #pragma endregion
     }
     catch (std::exception &e)
     {
         std::cerr << "Exception: " << e.what() << endl;
     }
+
+    system("pause");
     return 0;
 }

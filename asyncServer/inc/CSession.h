@@ -1,4 +1,7 @@
 #pragma once
+#include "Const.h"
+#include "MsgNode.h"
+
 #include<map>
 #include <memory>
 #include <boost/asio.hpp>
@@ -8,11 +11,11 @@
 #include <mutex>
 #include <queue>
 #include <iomanip>
-#include "Const.h"
-#include "MsgNode.h"
+
 using boost::asio::ip::tcp;
 
 class CServer;
+class LogicSystem;
 
 // class MsgNode
 // {
@@ -95,4 +98,15 @@ private:
 
     void HandleReadHead(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
     void HandleReadMsg(const boost::system::error_code& ec,size_t bytes_transferred,std::shared_ptr<CSession> _self_CSession);
+};
+
+
+class LogicNode
+{
+    friend class LogicSystem;
+public:
+    LogicNode(std::shared_ptr<CSession>,std::shared_ptr<RecvNode>);
+private:
+    std::shared_ptr<CSession> _session;
+    std::shared_ptr<RecvNode> _recvnode;
 };

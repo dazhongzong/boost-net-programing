@@ -4,6 +4,8 @@
 #include <json/json.h>
 #include <json/value.h>
 #include <json/reader.h>
+#include "../inc/LogicSystem.h"
+
 void CSession::Send(char *msg, int length,short msg_id)
 {
     bool pending = false;
@@ -144,11 +146,12 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
                 bytes_transferred -=data_len;
                 _recv_msg_node->_data[_recv_msg_node->_total_len] = 0;
                 std::cout<<"receive data is "<<_recv_msg_node->_data <<std::endl;
-                //调用Send发送测试
-                Json::Value root;
-                Json::Reader reader;
-                reader.parse(_recv_msg_node->_data,root);
-                Send(root.toStyledString(),root["id"].asInt());
+                // //调用Send发送测试
+                // Json::Value root;
+                // Json::Reader reader;
+                // reader.parse(_recv_msg_node->_data,root);
+                // Send(root.toStyledString(),root["id"].asInt());
+                LogicSystem::GetInstance()->PostMsgToQue(std::make_shared<LogicNode>(shared_from_this(),_recv_msg_node));
                 //继续轮询剩余未处理数据
                 _b_head_parse = false;
                 _recv_head_node->Clear();
@@ -178,12 +181,13 @@ void CSession::HandleRead(const boost::system::error_code &ec, size_t bytes_tran
             _recv_msg_node->_cur_len += remain_msg;
             bytes_transferred -= remain_msg;
             _recv_msg_node->_data[_recv_msg_node->_total_len] = 0;
-            std::cout<<"receive body data is : "<<_recv_msg_node->_data<<std::endl;
+            // std::cout<<"receive body data is : "<<_recv_msg_node->_data<<std::endl;
 
-            Json::Value root;
-            Json::Reader reader;
-            reader.parse(_recv_msg_node->_data,root);
-            Send(root.toStyledString(),root["id"].asInt());
+            // Json::Value root;
+            // Json::Reader reader;
+            // reader.parse(_recv_msg_node->_data,root);
+            // Send(root.toStyledString(),root["id"].asInt());
+            LogicSystem::GetInstance()->PostMsgToQue(std::make_shared<LogicNode>(shared_from_this(),_recv_msg_node));
             //开启处理下一个 消息头部和消息体
             _b_head_parse = false;
             _recv_head_node->Clear();
@@ -313,4 +317,10 @@ void CSession::HandleReadMsg(const boost::system::error_code& ec,size_t bytes_tr
         Close();
         _server->ClearSession(_uuid);
     }
+}
+
+LogicNode::LogicNode(std::shared_ptr<CSession> session,std::shared_ptr<RecvNode> recvNode)
+:_session(session),_recvnode(recvNode)
+{
+
 }

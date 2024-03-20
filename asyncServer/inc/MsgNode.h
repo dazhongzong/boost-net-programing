@@ -3,6 +3,9 @@
 #include <iostream>
 #include <boost/asio.hpp>
 
+
+class LogicSystem;
+
 class MsgNode
 {
 public:
@@ -19,6 +22,7 @@ public:
 
 class RecvNode : public MsgNode
 {
+    friend class LogicSystem;
 public:
     RecvNode(short total_len,short msg_id);
     ~RecvNode()
@@ -30,6 +34,7 @@ public:
 
 class SendNode: public MsgNode
 {
+    friend class LogicSystem;
 public:
     SendNode(const char*msg,short total_len,short msg_id);
     ~SendNode()

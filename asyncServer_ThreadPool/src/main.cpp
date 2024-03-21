@@ -9,6 +9,14 @@
 #include <thread>
 #include <mutex>
 
+
+/*
+该模式是 多个网络线程共享 一个io_context
+连接请求也是 该 io_context 处理
+网络IO则是多个线程用 同一个io_context处理
+逻辑层 是单线程处理逻辑
+*/
+
 bool bstop = false;
 std::condition_variable cond_quit;
 std::mutex mutex_quit;

@@ -7,12 +7,12 @@
 #include <csignal>
 #include <thread>
 #include <mutex>
-//echo server   不能用于生产
 
-// bool bstop = false;
-// std::condition_variable cond_quit;
-// std::mutex mutex_quit;oo
-
+/*
+该模式 一个io_context处理连接请求,
+多个线程多个io_context 处理网络IO事件
+一个逻辑线程 处理 逻辑层
+*/
 
 int main(){
     try

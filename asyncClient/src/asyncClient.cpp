@@ -36,7 +36,7 @@ int main()
                 }
 
                 int i =0;
-                while(i < 500)
+                while(i++ < 500)
                 {
                     Json::Value root;
                     root["id"] = 1001;
@@ -73,14 +73,17 @@ int main()
                     size_t reply_msg_len =  boost::asio::read(sock,boost::asio::buffer(reply_msg,reply_msglen_host));
                     
                     std::cout<<"reply_msg :"<<reply_msg<<std::endl; 
-                    i++;
+                    
                 }
             }
             catch (std::exception& ex){
                 std::cerr<<"Exception:"<<ex.what()<<std::endl;
+                return 0;
             }
-        });
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            return 0;
+    });
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
 
@@ -92,8 +95,8 @@ int main()
     auto end = std::chrono::high_resolution_clock::now();
 
 
-    auto during = std::chrono::duration_cast<std::chrono::microseconds>(end-start);
-    std::cout<<"Time spent "<<during.count()<<" mircroseconds"<<std::endl;
+    auto during = std::chrono::duration_cast<std::chrono::seconds>(end-start);
+    std::cout<<"Time spent "<<during.count()<<" seconds"<<std::endl;
 
 
     return 0;

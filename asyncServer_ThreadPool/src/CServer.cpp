@@ -9,9 +9,7 @@ _acceptor(_ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),port)){
 }
 
 void CServer::start_accept(){
-    auto& io_context = AsioIOServicePool::GetInstance()->GetIOService();
-    auto new_session= std::make_shared<CSession>(io_context,this);      //每个连接都有自己的session
-    // CSession* new_session = new CSession(_ioc);
+    auto new_session= std::make_shared<CSession>(_ioc,this);      //每个连接都有自己的session
     _acceptor.async_accept(new_session->Socket(),
     std::bind(&CServer::handle_accept,this,new_session,std::placeholders::_1)); //std::bind 成功后，智能指针将会通过值传递的方式 调用 拷贝构造函数  将引用计数 + 1
 }

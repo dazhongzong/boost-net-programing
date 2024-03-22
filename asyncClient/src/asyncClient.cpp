@@ -78,7 +78,6 @@ int main()
             }
             catch (std::exception& ex){
                 std::cerr<<"Exception:"<<ex.what()<<std::endl;
-                return 0;
             }
 
             return 0;

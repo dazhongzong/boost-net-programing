@@ -1,6 +1,5 @@
 #include "../inc/CServer.h"
 #include "../inc/AsioIOServicePool.h"
-#include "../inc/AsioThreadPool.h"
 
 CServer::CServer(boost::asio::io_context& ioc,short port):_ioc(ioc),
 _acceptor(_ioc,boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(),port)){

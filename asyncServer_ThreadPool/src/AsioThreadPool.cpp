@@ -20,6 +20,7 @@ boost::asio::io_context& AsioThreadPool::GetIOService()
 
 void AsioThreadPool::Stop()
 {
+    _service.stop();
     _work.reset();
 
     for(auto& t:_threads)

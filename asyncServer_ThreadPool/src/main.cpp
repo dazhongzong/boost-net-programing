@@ -38,7 +38,7 @@ int main(){
 
         CServer server(pool->GetIOService(),10086);
 
-
+        ioc.run();
         {
             std::unique_lock<std::mutex> lock(mutex_quit);
             

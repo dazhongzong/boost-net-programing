@@ -83,6 +83,7 @@ void LogicSystem::PostMsgToQue(std::shared_ptr<LogicNode> msg)
 
     if(_msg_que.size() == 1)
     {
+        lock.unlock();
         _consume.notify_one();
     }
 }

@@ -1,2 +1,6 @@
 ﻿  day01-thread.cpp
-  day01-thread.vcxproj -> D:\git\cppLearning\Concurrent\day01-thread\x64\Debug\day01-thread.exe
+D:\git\cppLearning\Concurrent\day01-thread\day01-thread.cpp(54,33): warning C4101: “e”: 未引用的局部变量
+D:\git\cppLearning\Concurrent\day01-thread\day01-thread.cpp(97,5): error C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\git\cppLearning\Concurrent\day01-thread\day01-thread.cpp(107,5): error C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+D:\git\cppLearning\Concurrent\day01-thread\day01-thread.cpp(331,13): error C2065: “accumulate_block”: 未声明的标识符
+D:\git\cppLearning\Concurrent\day01-thread\day01-thread.cpp(341,1): fatal  error C1903: 无法从以前的错误中恢复；正在停止编译

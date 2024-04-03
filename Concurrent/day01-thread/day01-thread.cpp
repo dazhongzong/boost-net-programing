@@ -402,6 +402,7 @@ void day02()
 
 int main()
 {
+    day01();
     return 0;
 }
 

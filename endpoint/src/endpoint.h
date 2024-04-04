@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <boost/asio.hpp>
 extern int client_end_point();
 extern int server_end_point();

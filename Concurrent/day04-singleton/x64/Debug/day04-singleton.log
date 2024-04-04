@@ -1,0 +1,4 @@
+﻿  day04-singleton.cpp
+D:\git\cppLearning\Concurrent\day04-singleton\day04-singleton.cpp(218,9): warning C4150: 删除指向不完整“SingleAutoSafe”类型的指针；没有调用析构函数
+D:\git\cppLearning\Concurrent\day04-singleton\day04-singleton.cpp(211,7): message : 参见“SingleAutoSafe”的声明
+  day04-singleton.vcxproj -> D:\git\cppLearning\Concurrent\day04-singleton\x64\Debug\day04-singleton.exe

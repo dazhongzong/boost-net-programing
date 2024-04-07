@@ -21,9 +21,10 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{87a16817-c7c2-40ec-a6d9-1878e15f8b27}</ProjectGuid>
-    <RootNamespace>day06FutureAndPromise</RootNamespace>
+    <ProjectGuid>{3bea792e-65db-4742-8071-081af967dd1e}</ProjectGuid>
+    <RootNamespace>AsyncFuntion</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>Async_Function</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -127,10 +128,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="day06-FutureAndPromise.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="thread_pool.h" />
+    <ClCompile Include="Async_Function.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

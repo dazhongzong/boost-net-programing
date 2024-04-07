@@ -2,7 +2,7 @@
 #include <future>
 #include <chrono>
 #include <thread>
-
+#include "thread_pool.h"
 // 定义一个异步任务
 std::string fetchDataFromDB(std::string query) 
 {
@@ -166,12 +166,35 @@ void use_shared_future_error() {
     myThread2.join();
     myThread3.join();
 }
+
 int main() 
 {
     //use_async();
     //use_package();
     //use_promise();
-    use_promise_exception();
-    use_shared_future();
+    //use_promise_exception();
+    //use_shared_future();
+
+    //auto& m1 = ThreadPool::instance();
+    //auto& j = ThreadPool::instance();
+    //std::cout << "m is " << &m1 << std::endl;
+    //std::cout << "j is " << &j << std::endl;
+
+    int m = 0;
+    ThreadPool::instance().commit([](int& m) {
+        m = 1024;
+        std::cout << "inner set m is " << m << std::endl;
+        }, m);
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::cout << "m is " << m << std::endl;
+
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    ThreadPool::instance().commit([](int& m) {
+        m = 1024;
+        std::cout << "inner set m is " << m << std::endl;
+        }, std::ref(m));
+    std::this_thread::sleep_for(std::chrono::seconds(3));
+    std::cout << "m is " << m << std::endl;
     return 0;
 }
